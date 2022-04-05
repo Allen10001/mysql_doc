@@ -16,7 +16,7 @@
 
 ## [MySQL中采用类型varchar(20)和varchar(255)对性能上的影响](https://blog.csdn.net/liqfyiyi/article/details/77868924)
 
->1.MySQL建立索引时如果没有限制索引的大小，索引长度会默认采用的该字段的长度，也就是说varchar(20)和varchar(255)对应的索引长度分别为20\*3(utf-8)(+2+1),255*3(utf-8)(+2+1)，**其中"+2"用来存储长度信息，“+1”用来标记是否为空**，加载索引信息时用varchar(255)类型会占用更多的内存； （备注：**当字段定义为非空的时候，是否为空的标记将不占用字节**）
+>1.MySQL建立索引时如果没有限制索引的大小，索引长度会默认采用的该字段的长度，也就是说varchar(20)和varchar(255)对应的索引长度分别为20\*3(utf-8)(+2+1),255*3(utf-8)(+2+1)，**其中"+2"用来存储长度信息，“+1”用来标记是否为空**，加载索引信息时用varchar(255)类型会占用更多的内存；（备注：**当字段定义为非空的时候，是否为空的标记将不占用字节**）
 >
 >varchr(10) 变长字段且允许NULL:10*(Character Set：utf8=3,gbk=2,latin1=1)+1(NULL)+2(变长字段) 
 >
@@ -32,11 +32,11 @@ varchar(M)其中M代表该数据类型所允许保存的字符串的最大长度
 >
 >1.MySQL 建立索引时,如果没有限制索引的大小，**索引长度会默认采用的该字段的长度.**
 >
->varchar(20)和varchar(255)对应的索引长度分别为20\*3(utf-8)(+2+1),255*3(utf-8)(+2+1)，其中”+2”用来存储长度信息，“+1”用来标记是否为空，加载索引信息时用varchar(255)类型会占用更多的内存； （当字段定义为非空的时候，是否为空的标记将不占用字节）
+>varchar(20)和varchar(255)对应的索引长度分别为20\*3(utf-8)(+2+1),255*3(utf-8)(+2+1)，其中”+2”用来存储长度信息，“+1”用来标记是否为空，**加载索引信息时用varchar(255)类型会占用更多的内存**； （当字段定义为非空的时候，是否为空的标记将不占用字节）
 >
 >2.varchar(20)与varchar(255)都是可变的字符串
 >
->通常情况下使用varchar(20)和varchar(255)保存较短的字符串’hello world’时,占用的空间都是一样的，但使用长度较短的列却有巨大的优势。较大的列使用更多的内存，MySQL通常会分配固定大小的内存块来保存值，这对排序或使用基于内存的临时表尤其不好。同样,也会发生在使用文件排序或者基于磁盘的临时表时。
+>通常情况下使用varchar(20)和varchar(255)保存较短的字符串’hello world’时,占用的空间都是一样的，但使用长度较短的列却有巨大的优势。较大的列使用更多的内存，**MySQL通常会分配固定大小的内存块来保存值，这对排序或使用基于内存的临时表尤其不好。同样,也会发生在使用文件排序或者基于磁盘的临时表时。**
 
 ## varchar特点
 
@@ -111,7 +111,7 @@ varchar(M)其中M代表该数据类型所允许保存的字符串的最大长度
 >
 >
 >
->在MySQL Server中打开Query Cache对数据库的读和写都会带来额外的消耗:
+>在MySQL Server中打开**Query Cache对数据库的读和写都会带来额外的消耗:**
 >
 >1) 读查询开始之前必须检查是否命中缓存。
 >
@@ -169,7 +169,7 @@ varchar(M)其中M代表该数据类型所允许保存的字符串的最大长度
 >
 >假设 a表10000数据，b表20数据
 >
->这里有2个过程，b 表数据最少，查询引擎优化选择b为驱动表，
+>这里有2个过程，b 表数据最少，**查询引擎优化选择b为驱动表，**
 >
 >- 循环b表的20条数据，
 >- 去a表的10000数据去匹配，这个匹配的过程是B+树的查找过程，比循环取数要快的多。
@@ -195,9 +195,9 @@ varchar(M)其中M代表该数据类型所允许保存的字符串的最大长度
 >结论
 >
 >可以看出来
->小表驱动大表：20+ log10000
->大表驱动小表：10000+ log20
->显然小表驱动大表查询效率要高很多。
+>**小表驱动大表：20+ log10000**
+>**大表驱动小表：10000+ log20**
+>**显然小表驱动大表查询效率要高很多。**
 
 ## [MySQL数据类型：UNSIGNED注意事项](https://www.cnblogs.com/blankqdb/archive/2012/11/03/blank_qdb.html)
 
@@ -319,7 +319,7 @@ https://zhuanlan.zhihu.com/p/62020571
 >
 >区别二：存储容量不同
 >
->- 对于char类型来说，最多只能存放的字符个数为255，和编码无关。
+>- 对于char类型来说，**最多只能存放的字符个数为255，和编码无关。**
 >- varchar最多能存放65532个字符。VARCHAR的最大有效长度由最大行大小和使用的字符集来确定。整体最大长度是65，532字节。
 
 ## h2  [MySQL 字段text类型的长度](https://blog.csdn.net/aa390481978/article/details/99351486)
@@ -360,7 +360,7 @@ https://zhuanlan.zhihu.com/p/62020571
 >看完这个比较你就知道用哪个好啦
 >我们公司一般用datatime,可控性比较强
 
-## [mysql使用TIMESTAMP的巨坑与解决方案！不建议大家使用TIMESTAMP，建议使用datetime（很重要，好文章！！）](https://blog.csdn.net/HD243608836/article/details/114645259)
+## ~~[mysql使用TIMESTAMP的巨坑与解决方案！不建议大家使用TIMESTAMP，建议使用datetime（很重要，好文章！！）](https://blog.csdn.net/HD243608836/article/details/114645259)~~
 
 ># 一、前言
 >
@@ -457,7 +457,7 @@ https://zhuanlan.zhihu.com/p/62020571
 
 ## [唯一约束和唯一索引区别](https://blog.csdn.net/weixin_42561040/article/details/113438592)
 
->到此为止，基本上就能得出，唯一约束和唯一索引在 MySQL 数据库里区别了
+>到此为止，基本上就能得出，唯一约束和唯一索引在 MySQL 数据库里区别了。
 >
 >概念上不同，**约束是为了保证数据的完整性，索引是为了辅助查询；**
 >
@@ -592,10 +592,10 @@ The  **`USE INDEX (*`index_list`)`** hint tells MySQL to use only one of the nam
 
 主要涉及到三个线程：
 
-* 主库在事务提交前将数据更新日志记录到二进制日志中（按事务提交的顺序记录二进制日志文件）
-* 备库I/O线程：建立一个和主库的普通的客户端连接，接受主库二进制转储线程发来的事件并存储到中继日志中
-* 主库的二进制转储线程：读取主库二进制日志文件中的事件，发送给备库的 I/O 线程建立的连接中
-* 备库的SQL线程：读取备库的中继日志中的事件，并在备库执行，完成数据的同步
+* 主库在事务提交前将数据更新日志记录到**二进制日志**中（按事务提交的顺序记录二进制日志文件）
+* **备库I/O线程**：建立一个和主库的普通的客户端连接，接受主库二进制转储线程发来的事件并存储到中继日志中
+* **主库的二进制转储线程**：读取主库二进制日志文件中的事件，发送给备库的 I/O 线程建立的连接中
+* **备库的SQL线程**：读取备库的中继日志中的事件，并在备库执行，完成数据的同步
 
 ![image-20200902100542145](./mysql_img/image-20200902100542145.png)
 
@@ -613,9 +613,59 @@ The  **`USE INDEX (*`index_list`)`** hint tells MySQL to use only one of the nam
 
 # mysql 日常学习专题
 
+## mysql binlog
 
+### [MySQL Binlog 介绍](https://blog.csdn.net/wwwdc1012/article/details/88373440)
 
-B+树 和 B树
+>#### Binlog日志的两个最重要的使用场景
+>
+>- **MySQL主从复制**：MySQL Replication在Master端开启binlog，Master把它的二进制日志传递给slaves来达到master-slave数据一致的目的
+>- **数据恢复**：通过使用 mysqlbinlog工具来使恢复数据
+>
+>**写 Binlog 的时机**
+>对支持事务的引擎如InnoDB而言，必须要提交了事务才会记录binlog。binlog 什么时候刷新到磁盘跟参数 sync_binlog 相关。
+>
+>如果设置为0，则表示MySQL不控制binlog的刷新，由文件系统去控制它缓存的刷新；
+>如果设置为不为0的值，则表示每 sync_binlog 次事务，MySQL调用文件系统的刷新操作刷新binlog到磁盘中。
+>设为1是最安全的，在系统故障时最多丢失一个事务的更新，但是会对性能有所影响。
+>如果 sync_binlog=0 或 sync_binlog大于1，当发生电源故障或操作系统崩溃时，可能有一部分已提交但其binlog未被同步到磁盘的事务会被丢失，恢复程序将无法恢复这部分事务。
+>
+>在MySQL 5.7.7之前，默认值 sync_binlog 是0，MySQL 5.7.7和更高版本使用默认值1，这是最安全的选择。一般情况下会设置为100或者0，牺牲一定的一致性来获取更好的性能。
+>
+>#### Binlog 文件以及扩展
+>
+>binlog日志包括两类文件:
+>
+>- 二进制日志索引文件（文件名后缀为.index）用于记录所有有效的的二进制文件
+>- 二进制日志文件（文件名后缀为.00000*）记录数据库所有的DDL和DML语句事件
+>
+>**Binlog 的日志格式**
+>记录在二进制日志中的事件的格式取决于二进制记录格式。支持三种格式类型：
+>
+>STATEMENT：基于SQL语句的复制（statement-based replication, SBR）
+>ROW：基于行的复制（row-based replication, RBR）
+>MIXED：混合模式复制（mixed-based replication, MBR）
+>Statement
+>每一条会修改数据的sql都会记录在binlog中
+>
+>优点：不需要记录每一行的变化，减少了binlog日志量，节约了IO, 提高了性能。
+>
+>缺点：由于记录的只是执行语句，为了这些语句能在slave上正确运行，因此还必须记录每条语句在执行的时候的一些相关信息，以保证所有语句能在slave得到和在master端执行的时候相同的结果。另外mysql的复制，像一些特定函数的功能，slave与master要保持一致会有很多相关问题。
+>
+>Row
+>5.1.5版本的MySQL才开始支持 row level 的复制,它不记录sql语句上下文相关信息，仅保存哪条记录被修改。
+>
+>优点： binlog中可以不记录执行的sql语句的上下文相关的信息，仅需要记录那一条记录被修改成什么了。所以row的日志内容会非常清楚的记录下每一行数据修改的细节。而且不会出现某些特定情况下的存储过程，或function，以及trigger的调用和触发无法被正确复制的问题.
+>
+>缺点:所有的执行的语句当记录到日志中的时候，都将以每行记录的修改来记录，这样可能会产生大量的日志内容。
+>
+>注：将二进制日志格式设置为ROW时，有些更改仍然使用基于语句的格式，包括所有DDL语句，例如CREATE TABLE， ALTER TABLE，或 DROP TABLE。
+>
+>Mixed
+>从5.1.8版本开始，MySQL提供了Mixed格式，实际上就是Statement与Row的结合。
+>在Mixed模式下，一般的语句修改使用statment格式保存binlog，如一些函数，statement无法完成主从复制的操作，则采用row格式保存binlog，MySQL会根据执行的每一条具体的sql语句来区分对待记录的日志形式，也就是在Statement和Row之间选择一种。
+>
+>
 
 ## [数据库连接池-常用参数配置及含义](https://blog.csdn.net/akaks0/article/details/82730746)
 
@@ -698,11 +748,11 @@ B+树 和 B树
 ## [【纠错系列】不可重复读与幻读的区别](https://www.jianshu.com/p/97f2a6e8f57c)
 
 >**幻读**，并不是说两次读取获取的结果集不同，幻读侧重的方面是某一次的 select 操作得到的结果所表征的数据状态**无法支撑后续的业务操作**。
->更为具体一些：select 某记录是否存在，不存在，准备插入此记录，但执行 insert 时发现此记录已存在，无法插入，此时就发生了幻读。
+>更为具体一些：**select 某记录是否存在，不存在，准备插入此记录，但执行 insert 时发现此记录已存在，无法插入，此时就发生了幻读。**
 >
 >### 事务隔离级别
 >
->mysql 有四级事务隔离级别 每个级别都有字符或数字编号
+>mysql 有四级事务隔离级别 每个级别都有字符或数字编号。
 >
 >> 读未提交 READ-UNCOMMITTED | 0：存在脏读，不可重复读，幻读的问题
 >
@@ -716,7 +766,7 @@ B+树 和 B树
 >
 > 解释
 >
->我们能确定的是，RR级别解决了不可重复读的问题。
+>我们能确定的是，RR 级别解决了不可重复读的问题。
 >那么为什么说上述例子属于不可重复读范畴呢？我们得从解决不可重复读问题的原理MVCC讲起。
 >
 >### MVCC
@@ -751,7 +801,7 @@ B+树 和 B树
 >
 >一个 Update 操作的具体流程。当Update SQL被发给MySQL后，MySQL Server会根据where条件，读取第一条满足条件的记录，然后InnoDB引擎会将第一条记录返回，并加锁 (current read)。待MySQL Server收到这条加锁的记录之后，会再发起一个Update请求，更新这条记录。一条记录操作完成，再读取下一条记录，直至没有满足条件的记录为止。因此，Update操作内部，就包含了一个当前读。同理，Delete操作也一样。Insert操作会稍微有些不同，简单来说，就是Insert操作可能会触发Unique Key的冲突检查，也会进行一个当前读。
 >
->注：针对一条当前读的SQL语句，InnoDB与MySQL Server的交互，是一条一条进行的，因此，加锁也是一条一条进行的。先对一条满足条件的记录加锁，返回给MySQL Server，做一些DML操作；然后在读取下一条加锁，直至读取完毕。
+>注：针对一条当前读的SQL语句，InnoDB与MySQL Server的交互，是一条一条进行的，因此，**加锁也是一条一条进行的**。先对一条满足条件的记录加锁，返回给MySQL Server，做一些DML操作；然后在读取下一条加锁，直至读取完毕。
 >
 >作者：妖云小离
 >链接：https://www.jianshu.com/p/97f2a6e8f57c
@@ -765,7 +815,7 @@ B+树 和 B树
   >## 概念
   >
   >**事务ID**
-  >事务ID是一个递增的整数，唯一的标识一个事务。ID的大小可以用来表示事务的串行化顺序，用于事务可见性的判断。
+  >**事务ID是一个递增的整数，唯一的标识一个事务。**ID的大小可以用来表示事务的串行化顺序，用于事务可见性的判断。
   >
   >**多版本存储**
   >MySQL InnoDB实现了多版本并发控制（MVCC），在多版本存储上，MySQL采用从新到旧（Newest To Oldest）的版本链。B+Tree叶结点上，始终存储的是最新的数据（可能是还未提交的数据）。而旧版本数据，通过UNDO记录（做DELTA）存储在回滚段（Rollback Segment）里。每一条记录都会维护一个ROW HEADER元信息，存储有创建这条记录的事务ID，一个指向UNDO记录的指针。通过最新记录和UNDO信息，可以还原出旧版本的记录。
@@ -798,7 +848,7 @@ B+树 和 B树
   >
   >**可见性的判断**
   >
-  >事务通过用当前事务（或语句，取决于隔离级别）的RaadView来判断一个事务id的操作是否对当前事务可见。判断可见性的伪代码如下：
+  >**事务通过用当前事务（或语句，取决于隔离级别）的RaadView来判断一个事务id的操作是否对当前事务可见。**判断可见性的伪代码如下：
   >
   >```java
   >IsVisible(trx_id)
@@ -826,12 +876,12 @@ B+树 和 B树
   >
   >**事务在开始时创建一个ReadView**，当读一条记录时，会遍历版本链表，通过当前事务的ReadView判断可见性，找到第一个对当前事务可见的版本，读这个版本。
   >
-  >对于写操作，包括Locking Read(SELECT ... FOR UPDATE), UPDATE, DELETE，需要加写锁。根据谓词条件上索引使用情形，锁定有不同的方式：
+  >**对于写操作，包括Locking Read(SELECT ... FOR UPDATE), UPDATE, DELETE，需要加写锁。根据谓词条件上索引使用情形，锁定有不同的方式：**
   >
-  >1）有索引：
-  >对于索引上有唯一约束且为等值条件的情形，不用GAP LOCK，只锁定索引记录。对于其它情形，使用GAP LOCK，相当于谓词锁。
-  >2）没有索引：
-  >由于MySQL没有实现通用的谓词锁，这时就相当于锁全表。
+  >**1）有索引：**
+  >**对于索引上有唯一约束且为等值条件的情形，不用GAP LOCK，只锁定索引记录。对于其它情形，使用GAP LOCK，相当于谓词锁。**
+  >**2）没有索引：**
+  >**由于MySQL没有实现通用的谓词锁，这时就相当于锁全表。**
   >
   >**读已提交（Read Committed）**
   >MySQL的读已提交实际是语句级别快照。
@@ -846,7 +896,6 @@ B+树 和 B树
   >
   >对写仍需要锁定，策略和读已提交类似，避免脏写。
 
-  区别？这几个锁的含义？
 
 [MySQL 中关于gap lock / next-key lock 的一个问题](https://blog.csdn.net/u013360850/article/details/86030084)
 
@@ -918,7 +967,7 @@ Record locks always lock index records, even if a table is defined with no index
 
 * **Gap Locks**
 
-A gap lock is a lock on a gap between index records, or a lock on the gap before the first or after the last index record. For example, `SELECT c1 FROM t WHERE c1 BETWEEN 10 and 20 FOR UPDATE;` prevents other transactions from inserting a value of `15` into column `t.c1`, whether or not there was already any such value in the column, because the gaps between all existing values in the range are locked.
+**A gap lock is a lock on a gap between index records, or a lock on the gap before the first or after the last index record.** For example, `SELECT c1 FROM t WHERE c1 BETWEEN 10 and 20 FOR UPDATE;` prevents other transactions from inserting a value of `15` into column `t.c1`, whether or not there was already any such value in the column, because the gaps between all existing values in the range are locked.
 
 A gap might span a single index value, multiple index values, or even be empty.
 
@@ -1101,9 +1150,9 @@ https://blog.csdn.net/yanggufyf123/article/details/73549578
 >
 >在使用left jion时，on和where条件的区别如下：
 >
->1、 on条件是在生成临时表时使用的条件，它不管on中的条件是否为真，都会返回左边表中的记录。
+>**1、 on条件是在生成临时表时使用的条件，它不管on中的条件是否为真，都会返回左边表中的记录。**
 >
->2、where条件是在临时表生成好后，再对临时表进行过滤的条件。这时已经没有left join的含义（必须返回左边表的记录）了，条件不为真的就全部过滤掉。
+>**2、where条件是在临时表生成好后，再对临时表进行过滤的条件。这时已经没有left join的含义（必须返回左边表的记录）了，条件不为真的就全部过滤掉。**
 >
 >假设有两张表：
 >
