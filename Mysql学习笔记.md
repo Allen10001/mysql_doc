@@ -155,11 +155,376 @@ varchar(M)其中M代表该数据类型所允许保存的字符串的最大长度
 
 # 官网
 
+## 14.7.1 InnoDB Locking
+
+https://dev.mysql.com/doc/refman/5.7/en/innodb-locking.html
+
+innodb 引擎各种锁的引擎；
+
+>
+>
+>
+
 ## Changes in MySQL 5.6.5 (2012-04-10, Milestone 8)
 
 - Previously, at most one [`TIMESTAMP`](https://dev.mysql.com/doc/refman/5.6/en/datetime.html) column per table could be automatically initialized or updated to the current date and time. This restriction has been lifted. Any [`TIMESTAMP`](https://dev.mysql.com/doc/refman/5.6/en/datetime.html) column definition can have any combination of `DEFAULT CURRENT_TIMESTAMP` and `ON UPDATE CURRENT_TIMESTAMP` clauses. In addition, these clauses now can be used with [`DATETIME`](https://dev.mysql.com/doc/refman/5.6/en/datetime.html) column definitions. For more information, see [Automatic Initialization and Updating for TIMESTAMP and DATETIME](https://dev.mysql.com/doc/refman/5.6/en/timestamp-initialization.html).
 
 # 文章
+
+## 多线程与数据库事务以及数据库连接之间的关系
+
+https://cloud.tencent.com/developer/article/1861190
+
+https://mp.weixin.qq.com/s?__biz=Mzg5OTU4ODc0Mg==&mid=2247484174&idx=1&sn=75e3dd926f4d4cc655f2d4b216b3247e&scene=21#wechat_redirect
+
+>## **总结**
+>
+>- 同一时刻，不同的线程会获取到不同的数据库连接，各自开启各自的事务，事务之间的具体联系就靠事务的特性ACID之隔离性的设置来确定. 
+>- 如果不同的线程获取的是同一个数据库连接，就会产生**事务冲突**，A 线程创建了A事务，B 线程创建了B事务，有可能A事务还未提交，B事务就提交了，那么这个时候多线程执行的dao方法相关的数据库操作都会生效，而A事务其他方法还未执行，导致问题发生，**而事务的隔离性是基于不同的连接的，避免不了这种情况**. (重要)
+>- 开启事务后，为什么三个dao方法可以获得同一个 Connection？spring是通过 **ThreadLocal** 来保证同一个线程在其生命周期中，当多次操作数据库的时候（很多个dao），**每次都可以获得同一个数据库连接**，为什么要确保是同一个数据库连接？是因为数据库的事务是基于数据库连接的，如果这个线程操作了三次dao每次连接都不一样，那么就没办法保证这三次操作被同一个事务所管理.
+
+## 死锁 ？？
+
+https://cloud.tencent.com/developer/article/1669350    死锁问题分析
+
+https://www.modb.pro/db/112014    死锁的badcase
+
+## 事务超时
+
+https://blog.csdn.net/moshenglv/article/details/82179417
+
+>***本文概览\***：介绍了超时有关的概念：@Transaction的timeout、[mybatis](https://so.csdn.net/so/search?q=mybatis&spm=1001.2101.3001.7020)的timeout、mysql的innodb_lock_wait_timeout。
+>
+>
+>
+>
+
+## 如果查询条件没有索引字段的话，是加「行锁」还是加「表锁」？
+
+https://www.51cto.com/article/742560.html
+
+>**当我们对数据库表进行 DML 和 DDL 操作的时候，MySQL 会给这个表加上 MDL 锁，即元数据锁，MDL 锁是 server 层实现的表级锁，适用于所有存储引擎。**
+>
+>- **对一张表进行增删查改操作（DML 操作）的时候，加的是MDL 读锁；**
+>- **对一张表进行表结构变更操作（DDL 操作）的时候，加的是MDL 写锁；**
+>
+>**之所以需要 MDL 锁，就是因为事务执行的时候，不能发生表结构的改变，否则就会导致同一个事务中，出现混乱的现象，如果当前有事务持有 MDL 读锁，DDL 操作就不能申请 MDL 写锁，从而保证表元数据的数据一致性。**
+>
+>MDL 的读锁与写锁满足读读共享，读写互斥，写写互斥的关系，比如：
+>
+>- 读读共享：MDL 读锁和 MDL 读锁之间不会产生阻塞，就是说增删改查不会因为 MDL 读锁产生而阻塞，可以并发执行，如果不是这样，数据库就是串行操作了；
+>- 读写互斥：MDL 读锁和 MDL 写锁之间相互阻塞，即同一个表上的 DML 和 DDL 之间互相阻塞；
+>- 写写互斥：MDL 写锁和 MDL 写锁之间互相阻塞，即两个 session 不能同时对一张表结构做变更操作，需要串行操作；
+>
+>如何查看事务是否持有 MDL 锁？
+>
+>
+>
+>在前面，我们的事物 A 执行了普通 select 查询语句，如果要看该事务持有的 MDL 锁，可以通过这条命令 select * from performance_schema.metadata_locks;。
+>
+>![图片](Mysql学习笔记.assets/32865ab816b2f9a58fc9564115491834831d51.png)
+>
+>可以看到，**事务 A 此时持有一个表级别的 MDL 锁，锁的类型是 SHARED_READ，也就是 MDL 读锁。**
+>
+>**对于，增删改操作，申请的  MDL 锁的类型是 SHARED_WRITE，它也属于 MDL 读锁，因为 SHARED_WRITE 与 SHARED_READ 这两个锁的类型是相互兼容的。**
+>
+>**因此，我们常说的普通查询不加锁，其实指的是不加 Innodb 的行级锁，但实际上是需要持有 MDL 锁的。**
+>
+>### 一条 select ... for update 会加什么锁？
+>
+>select ... for update 语句属于锁定读语句，它会对表的记录加 X 型的行级锁。
+>
+>不同隔离级别下，行级锁的种类是不同的。
+>
+>在读已提交隔离级别下，行级锁的种类只有记录锁，也就是仅仅把一条记录锁上。
+>
+>在可重复读隔离级别下，行级锁的种类除了有记录锁，还有间隙锁（目的是为了避免幻读），所以行级锁的种类主要有三类：
+>
+>- Record Lock，记录锁，也就是仅仅把一条记录锁上；
+>- Gap Lock，间隙锁，锁定一个范围，但是不包含记录本身；
+>- Next-Key Lock：Record Lock + Gap Lock 的组合，锁定一个范围，并且锁定记录本身。
+>
+>行级锁加锁规则比较复杂，不同的场景，加锁的形式是不同的。
+>
+>加锁的对象是索引，加锁的基本单位是 next-key lock，它是由记录锁和间隙锁组合而成的，next-key lock 是前开后闭区间，而间隙锁是前开后开区间。
+>
+>但是，next-key lock 在一些场景下会退化成记录锁或间隙锁。
+>
+>那到底是什么场景呢？总结一句，在能使用记录锁或者间隙锁就能避免幻读现象的场景下， next-key lock 就会退化成记录锁或间隙锁。
+>
+>这次我们只讨论，执行 select ... for update 语句，如果查询条件没有索引字段的话，会加什么锁？
+>
+>现在假设事务 A 执行了下面这条语句，查询条件中 age 不是索引字段。
+>
+>这时候有其他事务对这张表进行增删改，都会发生阻塞。
+>
+>![image-20230207113131938](Mysql学习笔记.assets/image-20230207113131938.png)
+>
+>先来看看，事务 A 持有什么类型的 MDL 锁？
+>
+>可以执行 select * from performance_schema.metadata_locks\G; 这条语句，查看事务 A 此时持有了有什么类型的 MDL 锁。
+>
+>执行结果如下：
+>
+>![图片](Mysql学习笔记.assets/b8d7cfa98810a21747b175a9ee417f9e7d045a.png)
+>
+>可以看到，事务 A 此时持有一个表级别的 MDL 锁，锁的类型是 SHARED_WRITE，属于 MDL 读锁。
+>
+>而在前面我提到过，当事务对表进行增删查改操作的时候，事务会申请 MDL 读锁，而 MDL 读锁之间是相互兼容的。
+>
+>所以，当事务 A 执行了查询条件没有索引字段的 select ... for update 语句后，不可能是因为事务 A 持 MDL 读锁，才导致其他事务无法进行增删改操作。
+>
+>再来看看，事务  A 持有哪些行级锁？
+>
+>可以执行 select * from performance_schema.data_locks\G; 这条语句，查看事务 A 此时持有了哪些行级锁。
+>
+>输出结果如下，我删减了不必要的信息：
+>
+>![图片](Mysql学习笔记.assets/a7a07e198a4f241a4d37090670c7f59a34b9ea.png)
+>
+>从上图可以看到，共加了两种类型的锁，分别是：
+>
+>- 1 个表级锁：X 类型的意向锁（表级别的锁）；
+>- 4 个行级锁：X 类型的行级锁；
+>
+>#### 什么是意向锁？
+>
+>在 InnoDB 存引擎中，当事务执行锁定读、插入、更新、删除操作后，需要先对表加上「意向锁」，然后再对记录加「行级锁」。
+>
+>之所以要设计「意向锁」，目的是为了快速判断表里是否有行级锁，具体的说明参见：MySQL 全局锁、表级锁、行级锁，你搞清楚了吗？
+>
+>意向锁不会和行级锁发生冲突，而且意向锁之间也不会发生冲突，意向锁只会和共享表锁（lock tables ... read）和独占表锁（lock tables ... write）发生冲突。
+>
+>所以，当事务 A 执行了查询条件没有索引字段的 select ... for update 语句后，不可能是因为事务 A 持有了意向锁，才导致其他事务无法进行增删改操作。
+>
+>#### 具体是哪 4 个行级锁？
+>
+>图中 LOCK_TYPE 中的 RECORD 表示行级锁，而不是记录锁的意思：
+>
+>- **如果 LOCK_MODE 为X，说明是 X 型的 next-key 锁；**
+>- **如果 LOCK_MODE 为X, REC_NOT_GAP，说明是 X 型的记录锁；**
+>- **如果 LOCK_MODE 为X, GAP，说明是 X 型的间隙锁；**
+>
+>然后通过 LOCK_DATA 信息，可以确认 next-key 锁的范围，具体怎么确定呢？
+>
+>根据我的经验，如果 LOCK_MODE 是 next-key 锁或者间隙锁，那么 LOCK_DATA 就表示锁的范围最右值，而锁范围的最左值为 LOCK_DATA 的上一条记录的值。
+>
+>因此，此时事务 A 在主键索引（INDEX_NAME : PRIMARY）上加了 4 个 next-key 锁，如下：
+>
+>- X 型的 next-key 锁，范围：(-∞, 1]
+>- X 型的 next-key 锁，范围：(1, 2]
+>- X 型的 next-key 锁，范围：(2, 3]
+>- X 型的 next-key 锁，范围：(3, +∞]
+>
+>这相当于把整个表给锁住了，其他事务在对该表进行增、删、改操作的时候 都会被阻塞。只有在事务 A 提交了事务，事务 A 执行过程中产生的锁才会被释放。
+>
+>为什么因为事务 A 对表所有记录加了 X 型的 next-key 锁后，其他事务就无法进行增、删、改操作了呢？
+>
+>其他事务在执行「删除或者更新操作」的时候，也会申请 X 型的  next-key 锁，next-key 锁是包含记录锁和间隙锁的，间隙锁之间虽然是相互兼容的，但是记录锁之间存在 X 型和 S 型的关系，即读读共享、读写互斥、写写互斥的关系。
+>
+>所以当事务 A 持有了  X 型的 next-key 锁后，其他事务就无法申请 X 型的  next-key 锁，从而发生阻塞。
+>
+>比如，前面的例子，事务 B 在更新 id = 1 的记录的时候，它会申请 X 型的记录锁（唯一索引等值操作，  next-key 锁会退化为记录锁），但是因为事务 A 持有了 X 型的 next-key 锁，所以事务 B 在申请 X 型的记录锁的时候，会发生阻塞。
+>
+>我们也可以通过  select * from performance_schema.data_locks\G; 这条语句得知。
+>
+>![图片](Mysql学习笔记.assets/4316f061820eeb6466c0306a66a8d1c3d69982.png)
+>
+>事务 C 的删除操作被阻塞的原因，也是这个原因。
+>
+>事务 D 的插入操作被阻塞的原因，跟事务 B 和事务 C 的原因不同。
+>
+>插入语句在插入一条记录之前，需要先定位到该记录在 B+树 的位置，如果插入的位置的下一条记录的索引上有间隙锁，如果已加间隙锁，此时会生成一个插入意向锁，然后锁的状态设置为等待状态，现象就是插入语句会被阻塞。
+>
+>事务 D 插入了一条 id = 10 的新记录，在主键索引树上定位到插入的位置，而该位置的下一条记录是 supremum pseudo-record，该记录是一个特殊的记录，用来标识最后一条记录，而该特殊记录上正好持有了间隙锁（next-key 锁包含间隙锁），所以这条插入语句会发生阻塞。
+>
+>我们也可以通过  select * from performance_schema.data_locks\G; 这条语句得知。
+>
+>![图片](Mysql学习笔记.assets/b5266700224863d950157624b78985fbc4a26c.png)
+>
+>为什么只是查询年龄 20 岁以下的行记录，而把整个表给锁住了呢？
+>
+>**这是因为事务 A 的这条锁定读查询语句，没有使用索引列作为查询条件，所以扫描的方式是全表扫描，行级锁是在遍历索引的时候加上的，并不是针对输出的结果加行级锁。**
+>
+>不只是锁定读查询语句不加索引才会导致这种情况，update 和 delete 语句如果查询条件不加索引，那么由于扫描的方式是全表扫描，于是就会对每一条记录的索引上都会加 next-key 锁，这样就相当于锁住的全表。
+>
+>因此，在线上在执行 update、delete、select ... for update 等具有加锁性质的语句，一定要检查语句是否走了索引，如果是全表扫描的话，会对每一个索引加 next-key 锁，相当于把整个表锁住了，这是挺严重的问题。
+>
+>### 如果数据量很大，还是一样的原因吗？
+>
+>前面我们结论得出，如果如果锁定读查询语句，没有使用索引列作为查询条件，导致扫描是全表扫描。那么，每一条记录的索引上都会加 X 型的 next-key 锁（行级锁）。正是因为这个原因，才导致其他事务，无法对该表进行增删改操作。
+>
+>那如果一张表的数据量超过几百万行，还是一样对每一条记录的索引上都会加 X 型的 next-key 锁吗？
+>
+>群里有小伙伴提出了这个说法，说如果 MySQL 认为数据量太大时，自动将行所升级到表锁。
+>
+>![图片](Mysql学习笔记.assets/b4b88b9653e0ba4d242570005dd61a318328d4.png)
+>
+>不着急说结论，我们直接做个实验。
+>
+>我在 t_user 表插入了 300 多万条数据。
+>
+>![图片](Mysql学习笔记.assets/11211a461602b3127b5973a81a54992827dc2c.png)
+>
+>现在有个事务执行了这条查询语句，查询条件 age 字段不是索引字段。
+>
+>复制
+>
+>```
+>mysql> begin;
+>Query OK, 0 rows affected (0.00 sec)
+>
+>mysql> select * from t_user where age < 20 for update;1.2.3.4.
+>```
+>
+>然后，我们执行 select * from performance_schema.data_locks\G; 这条语句（我执行了好长时间，至少有几十分钟）。
+>
+>![图片](Mysql学习笔记.assets/2170214016e41b9f02e1048ef583fca11aeb92.png)
+>
+>可以看到，每一条记录的索引上都会加 X 型的 next-key 锁（行级锁）。
+>
+>**所以，MySQL 认为数据量太大时，自动将行所升级到表锁 ，这句话并不准确。**
+>
+>### 总结 (重要)
+>
+>**在执行 select … for update 语句的时候，会有产生 2 个表级别的锁：**
+>
+>**一个是 Server 层表级别的锁：MDL 锁。事务在进行增删查改的时候，server 层申请 MDL 锁都是 MDL 读锁，而 MDL 读锁之间是相互兼容的，MDL 读锁只会和 MDL 写锁发生冲突，在对表结构进行变更操作的时候，才会申请  MDL 写锁。**
+>
+>**一个是 Inoodb 层表级别的锁：意向锁。事务在进行增删改和锁定读的时候，inoodb 层会申请意向锁，意向锁不会和行级锁发生冲突，而且意向锁之间也不会发生冲突，意向锁只会和共享表锁（lock tables ... read）和独占表锁（lock tables ... write）发生冲突。**
+>
+>**如果 select … for update 语句的查询条件没有索引字段的话，整张表都无法进行增删改了，从这个现象看，好像是把表锁起来了，但是并不是因为上面这两个表级锁的原因。** 
+>
+>**而是因为如果锁定读查询语句，没有使用索引列作为查询条件，导致扫描是全表扫描。那么，每一条记录的索引上都会加 next-key 锁（行级锁），这样就相当于锁住的全表，这时如果其他事务对该表进行增、删、改操作的时候，都会被阻塞。**
+
+## MySQL(InnoDB剖析):---全文检索（倒排索引、全文索引/全文检索）
+
+https://blog.csdn.net/m0_46405589/article/details/113603721
+
+>二、倒排索引
+>
+>全文检索通常使用倒排索引（inverted index）来实现。倒排索引同B树索引一样，也是一种索引结构
+>它在辅助表（auxiliary table）中存储了单词与单词自身在一个或多个文档中所在位置之间的映射。这通常利用关键数组实现，其拥有两种表现形式：
+>inverted file index：其表现形式为{单词，单词所在文档的ID}
+>full inverted index：其表现形式为{单词，(单词所在文档的ID，在文档中的具体位置)}
+>
+>三、InnoDB全文检索的实现
+>InnoDB从1.2.x开始支持全文检索的技术，其采用“full inverted index”的方式
+>在InnoDB存储引擎中，将（DocumentId,Position）视为一个“ilist”。因此在全文检索的表（辅助表，见下）中，有两个列：
+>一个是word字段。在word字段上有设有索引
+>另一个是ilist字段
+>此外，由于InnoDB存储引擎ilist字段中存放了Position信息，故可以进行Proximity Search，而MyISAM存储引擎不支持该特性
+>当前InnoDB的全文索引还存在以下的限制：
+>每张表只能有一个全文检索的索引
+>由多列组合而成的全文检索的索引列必须使用相同的字符集与排序规则
+>不支持没有单词界定符（delimiter）的语言，如中文、日语、韩语等
+>
+>```java
+>正如前面所说的，倒排索引需要将 word 存放到一张表中，这个表称为 Auxiliary Table（辅助表）
+>在InnoDB存储引擎中，为了提高全文检索的并行性能，共有6张Auxiliary Table，目前每张表根据word的Latin编码进行分区
+>Auxiliary Table是持久的表，存放于磁盘上.
+>  
+>innodb_ft_aux_table参数（辅助表的查看）
+>InnoDB允许用户查看指定倒排索引的Auxiliary Table中分词的信息，可以通过这个参数来观察倒排索引的Auxiliary Table
+>
+>例如下面的SQL语句设置查看test数据库下表fts_a的Auxiliary Table：
+>set global innodb_ft_aux_table='test/fts_a';
+>设置之后，就可以通过查看information_schema数据库下的 innodb_ft_index_table 表来得到表 fts_a 中的分词信息.
+>
+>```
+>
+>FTS Index Cache（全文检索索引缓存）
+>然而在InnoDB存储引擎的全文索引中，还有另外一个重要的概念FTS Index Cache（全文检索索引缓存），其用来提高全文检索的性能
+>FTS Index Cache是一个红黑树结构，其根据（word，ilist）进行排序
+>这意味着插入的数据已经更新了对应的表，但是对全文索引的更新可能在分词操作后还在FTS Index Cache中，Auxiliary Table可能还没有更新
+>FTS Index Cache的更新：
+>**InnoDB会批量对FTS Index Cache进行更新，而不是每次插入后更新一次Auxiliary Table**
+>**当对全文检索进行查询时，Auxiliary Table首先会将在FTS Index Cache中对应的word字段合并到Auxiliary Table中，然后再进行查询**
+>这种合并（merge）操作非常类似之前介绍的Insert Buffer的功能，不同的是Insert Buffer是一个持久的对象，并且其是B+树结构。然而FTS Index Cache的作用又和Insert Buffer是类似的，它提高了InnoDB存储引擎的性能，并且由于其根据红黑树排序后进行批量插入，其产生的Auxiliary Table相对较小
+>innodb_ft_cache_size参数
+>该参数用来控制FTS Index Cache的大小，默认值为32M
+>当该缓存满时，会将其中的（word,ilist）分词信息同步到磁盘的Auxiliary Table中
+>增大该参数可以提高全文检索的性能，但是在宕机时，未同步到磁盘中的索引信息可能需要更长的时间进行恢复.
+>
+>* **事务提交时FTS Index Cache的更新**
+>  对于其他数据库，例如 Oracle 11g，用户可以选择手动在事务提交时，或者固定间隔时间将倒排索引的更新刷新到磁盘
+>  对于InnoDB来说，其总是在事务提交时将分词写入到FTS Index Cache。然后通过批量更新写入到磁盘。虽然InnoDB通过一种延时的、批量的写入方式来提高数据库的性能，但是上述操作仅在事务提交时发生
+>* **数据库关闭时、宕机时FTS Index Cache与Auxiliary Table的更新**
+>  数据库关闭时：**在FTS Index Cache中的数据库会同步到磁盘上的Auxiliary Table中**
+>  数据库宕机时：**一些FTS InDEX Cache中的数据库可能未被同步到磁盘上。**那么下次重启时，当用户对表进行全文检索（查询或者插入操作）时，InnoDB会自动读取未完成的文档，然后进行分词操作，再将分词的结果放入到FTS Index Cache中。
+>
+>* **FTS Document ID（FTS_DOC_ID列）**
+>  FTS Document ID是另外一个重要的概念
+>  在InnoDB存储引擎中，为了支持全文检索，必须有一个列与word进行映射：
+>  在InnoDB中这个列被命名为FTS_DOC_ID
+>  其类型必须是bigint unsigned not null
+>  并且InnoDB自动会在该列上加入一个名为FTS_DOC_ID_INDEX的unique index索引
+>  上述这些操作都是由InnoDB存储引擎自动完成，用户也可以在建表时自动添加FTS_DOC_ID，以及相应的Unique Index。由于列名为FTS_DOC_ID的列具有特殊意义，因此创建时必须注意相应的类型，否则MySQL数据库会抛出错误
+>  例如下面自己手动创建一个FTS_DOC_ID列，但类型是int，而非bigint，因此抛出了错误
+>
+
+## sql 语句
+
+[SQL Case When Then Else End 多条件判断](https://blog.csdn.net/qq_41482600/article/details/122297637)
+
+>```sql
+>CASE WHEN condition THEN result
+> 
+>[WHEN...THEN...]
+> 
+>ELSE result
+> 
+>END
+>
+>```
+>
+>3、使用场景
+>
+>- 场景1
+>  有分数score，score<60返回不及格，score>=60返回及格，score>=80返回优秀
+>
+>```sql
+>SELECT
+>    STUDENT_NAME,
+>    (CASE WHEN score < 60 THEN '不及格'
+>        WHEN score >= 60 AND score < 80 THEN '及格'
+>        WHEN score >= 80 THEN '优秀'
+>        ELSE '异常' END) AS REMARK
+>FROM
+>    TABLE
+>
+>```
+>
+>- 场景2
+>  现老师要统计班中，有多少男同学，多少女同学，并统计男同学中有几人及格，女同学中有几人及格，要求用一个SQL输出结果。
+>
+>```sql
+>SELECT 
+>    SUM (CASE WHEN STU_SEX = 0 THEN 1 ELSE 0 END) AS MALE_COUNT,
+>    SUM (CASE WHEN STU_SEX = 1 THEN 1 ELSE 0 END) AS FEMALE_COUNT,
+>    SUM (CASE WHEN STU_SCORE >= 60 AND STU_SEX = 0 THEN 1 ELSE 0 END) AS MALE_PASS,
+>    SUM (CASE WHEN STU_SCORE >= 60 AND STU_SEX = 1 THEN 1 ELSE 0 END) AS FEMALE_PASS
+>FROM 
+>    THTF_STUDENTS
+>
+>```
+>
+>- 场景3
+>
+>```sql
+>ELECT 
+>    E_CODE,
+>    SUM(CASE WHEN E_TYPE = 0 THEN E_VALUE ELSE 0 END) AS WATER_ENERGY,--水耗
+>    SUM(CASE WHEN E_TYPE = 1 THEN E_VALUE ELSE 0 END) AS ELE_ENERGY,--电耗
+>    SUM(CASE WHEN E_TYPE = 2 THEN E_VALUE ELSE 0 END) AS HEAT_ENERGY--热耗
+>FROM 
+>    THTF_ENERGY_TEST
+>GROUP BY
+>    E_CODE
+>
+>```
+>
+>
 
 ## [SQL join查询为什么要小表驱动大表？ ](https://www.cnblogs.com/hellotin/p/14227664.html)
 
